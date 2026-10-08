@@ -4119,7 +4119,7 @@ SchedDataCalculatorGM107::setDelay(Instruction *insn, int delay,
    if (delay <= GM107_MIN_ISSUE_DELAY && (wr & rd) != 7) {
       // Barriers take one additional clock cycle to become active on top of
       // the clock consumed by the instruction producing it.
-      if (!next) {
+      if (!next || insn->bb != next->bb) {
          delay = 0x2;
       } else {
          int wt = getWtDepBar(next);
