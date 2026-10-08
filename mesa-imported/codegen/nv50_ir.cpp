@@ -590,6 +590,9 @@ void Instruction::init()
    predSrc = -1;
    flagsDef = -1;
    flagsSrc = -1;
+
+   // SchedDataCalculatorGM107::setDelay can read this before the scheduler sets it: no barriers, no waits
+   sched = 0x7e0;
 }
 
 Instruction::Instruction()
