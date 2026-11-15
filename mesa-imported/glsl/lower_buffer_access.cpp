@@ -310,6 +310,14 @@ lower_buffer_access::setup_buffer_access(void *mem_ctx,
             array_stride = 4;
             if (deref_array->array->type->is_64bit())
                array_stride *= 2;
+
+            /* The elements of a row-major matrix's column are a row apart. */
+            ir_dereference_array *column =
+               deref_array->array->as_dereference_array();
+            if (*row_major && column && column->array->type->is_matrix())
+               array_stride =
+                  link_calculate_matrix_stride(column->array->type, true,
+                                               packing);
          } else if (deref_array->array->type->is_matrix() && *row_major) {
             /* When loading a vector out of a row major matrix, the
              * step between the columns (vectors) is the size of a
