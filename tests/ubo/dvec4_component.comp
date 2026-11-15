@@ -1,0 +1,11 @@
+// A dvec4 array read by a component picked at run time: the double at byte 8 * i.
+// expect: {w: U(w) for w in range(128)}
+#version 460
+layout (local_size_x = 64) in;
+layout (std140, binding = 0) uniform Block { dvec4 d[16]; };
+layout (std430, binding = 0) buffer Out { uvec2 words[64]; };
+void main()
+{
+    uint i = gl_LocalInvocationIndex;
+    words[i] = unpackDouble2x32(d[i >> 2][i & 3u]);
+}

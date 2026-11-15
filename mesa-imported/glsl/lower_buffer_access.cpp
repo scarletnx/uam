@@ -282,6 +282,7 @@ lower_buffer_access::setup_buffer_access(void *mem_ctx,
    *offset = new(mem_ctx) ir_constant(0u);
    *row_major = is_dereferenced_thing_row_major(deref);
    *matrix_type = NULL;
+   nonconst_offset_align = 16;
 
    /* Calculate the offset to the start of the region of the UBO
     * dereferenced by *rvalue.  This may be a variable offset if an
@@ -361,6 +362,8 @@ lower_buffer_access::setup_buffer_access(void *mem_ctx,
             *offset = add(*offset,
                           mul(array_index,
                               new(mem_ctx) ir_constant(array_stride)));
+            nonconst_offset_align = MIN2(nonconst_offset_align,
+                                         array_stride & -array_stride);
          }
          deref = deref_array->array->as_dereference();
          break;

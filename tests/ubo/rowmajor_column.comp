@@ -1,0 +1,13 @@
+// A column of a row-major mat4 picked at run time: its row r is word 4 * r into the matrix.
+// expect: {4 * i + r: U(16 * (i >> 2) + 4 * r + (i & 3)) for i in range(64) for r in range(4)}
+#version 460
+layout (local_size_x = 64) in;
+layout (std140, row_major, binding = 0) uniform Block { mat4 m[16]; };
+layout (std430, binding = 0) buffer Out { uint words[256]; };
+void main()
+{
+    uint i = gl_LocalInvocationIndex;
+    vec4 c = m[i >> 2][i & 3u];
+    for (uint r = 0u; r < 4u; ++r)
+        words[4u * i + r] = floatBitsToUint(c[r]);
+}
