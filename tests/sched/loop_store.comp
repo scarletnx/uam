@@ -1,0 +1,12 @@
+#version 460
+// A loop of buffer reads and writes: barriers set at the end of the loop body and waited at its head.
+layout (local_size_x = 64) in;
+layout (std430, binding = 0) buffer Data { uint words[]; };
+
+void main()
+{
+    uint acc = gl_LocalInvocationIndex;
+    for (uint i = 0u; i < words[0]; i++)
+        acc += words[(acc + i) & 63u];
+    words[gl_LocalInvocationIndex + 64u] = acc;
+}
