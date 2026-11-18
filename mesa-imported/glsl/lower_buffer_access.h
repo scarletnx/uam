@@ -63,6 +63,11 @@ public:
 
 protected:
    bool use_std430_as_default;
+
+   /* Set by setup_buffer_access: the largest power of two, 16 at most, that
+    * divides every non-constant term it added to the offset.
+    */
+   unsigned nonconst_offset_align;
 };
 
 } /* namespace lower_buffer_access */

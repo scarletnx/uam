@@ -1,0 +1,11 @@
+// A uvec4 array picked at run time with a constant component.
+// expect: {i: U(4 * (i >> 2) + 1) for i in range(64)}
+#version 460
+layout (local_size_x = 64) in;
+layout (std140, binding = 0) uniform Block { uvec4 v[16]; };
+layout (std430, binding = 0) buffer Out { uint words[64]; };
+void main()
+{
+    uint i = gl_LocalInvocationIndex;
+    words[i] = v[i >> 2].y;
+}

@@ -1,0 +1,12 @@
+// The second uvec2 of a struct, 8 bytes into its slot, read by a component picked at run time.
+// expect: {i: U(4 * (i >> 2) + 2 + (i & 1)) for i in range(64)}
+#version 460
+layout (local_size_x = 64) in;
+struct Pair { uvec2 lo; uvec2 hi; };
+layout (std140, binding = 0) uniform Block { Pair p[16]; };
+layout (std430, binding = 0) buffer Out { uint words[64]; };
+void main()
+{
+    uint i = gl_LocalInvocationIndex;
+    words[i] = p[i >> 2].hi[i & 1u];
+}

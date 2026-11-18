@@ -1,0 +1,12 @@
+// A uvec2 8 bytes into a struct of an array, both picked at run time.
+// expect: {i: U(4 * (i & 15) + 2 + (i >> 5)) for i in range(64)}
+#version 460
+layout (local_size_x = 64) in;
+struct Entry { float f; uint pad; uvec2 v; };
+layout (std140, binding = 0) uniform Block { Entry e[16]; };
+layout (std430, binding = 0) buffer Out { uint words[64]; };
+void main()
+{
+    uint i = gl_LocalInvocationIndex;
+    words[i] = e[i & 15u].v[i >> 5];
+}

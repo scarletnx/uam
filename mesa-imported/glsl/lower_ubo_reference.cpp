@@ -526,6 +526,29 @@ lower_ubo_reference_visitor::insert_buffer_access(void *mem_ctx,
 {
    switch (this->buffer_access_type) {
    case ubo_load_access:
+      if (nonconst_offset_align < 16) {
+         /* A vector component or a row-major matrix column picked at run
+          * time.  glsl_to_tgsi reads a uniform block in 16-byte slots and
+          * drops the low 4 bits of a non-constant offset, so the scalar is
+          * picked out of the whole slot that holds it.
+          */
+         assert(type->is_scalar());
+         const unsigned size = type->is_64bit() ? 8 : 4;
+         const glsl_type *slot_type =
+            glsl_type::get_instance(type->base_type, 16 / size, 1);
+         ir_expression *slot =
+            ubo_load(mem_ctx, slot_type,
+                     bit_and(offset, new(mem_ctx) ir_constant(~15u)));
+         ir_expression *component =
+            bit_and(rshift(offset->clone(mem_ctx, NULL),
+                           new(mem_ctx) ir_constant(size == 8 ? 3u : 2u)),
+                    new(mem_ctx) ir_constant(16 / size - 1));
+         base_ir->insert_before(assign(deref->clone(mem_ctx, NULL),
+                                       expr(ir_binop_vector_extract, slot,
+                                            component),
+                                       mask));
+         break;
+      }
       base_ir->insert_before(assign(deref->clone(mem_ctx, NULL),
                                     ubo_load(mem_ctx, type, offset),
                                     mask));

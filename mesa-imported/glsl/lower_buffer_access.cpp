@@ -282,6 +282,7 @@ lower_buffer_access::setup_buffer_access(void *mem_ctx,
    *offset = new(mem_ctx) ir_constant(0u);
    *row_major = is_dereferenced_thing_row_major(deref);
    *matrix_type = NULL;
+   nonconst_offset_align = 16;
 
    /* Calculate the offset to the start of the region of the UBO
     * dereferenced by *rvalue.  This may be a variable offset if an
@@ -309,6 +310,14 @@ lower_buffer_access::setup_buffer_access(void *mem_ctx,
             array_stride = 4;
             if (deref_array->array->type->is_64bit())
                array_stride *= 2;
+
+            /* The elements of a row-major matrix's column are a row apart. */
+            ir_dereference_array *column =
+               deref_array->array->as_dereference_array();
+            if (*row_major && column && column->array->type->is_matrix())
+               array_stride =
+                  link_calculate_matrix_stride(column->array->type, true,
+                                               packing);
          } else if (deref_array->array->type->is_matrix() && *row_major) {
             /* When loading a vector out of a row major matrix, the
              * step between the columns (vectors) is the size of a
@@ -361,6 +370,8 @@ lower_buffer_access::setup_buffer_access(void *mem_ctx,
             *offset = add(*offset,
                           mul(array_index,
                               new(mem_ctx) ir_constant(array_stride)));
+            nonconst_offset_align = MIN2(nonconst_offset_align,
+                                         array_stride & -array_stride);
          }
          deref = deref_array->array->as_dereference();
          break;
