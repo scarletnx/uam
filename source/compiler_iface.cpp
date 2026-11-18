@@ -200,7 +200,9 @@ nvc0_program_assign_varying_slots(struct nv50_ir_prog_info *info)
 	return ret;
 }
 
-DekoCompiler::DekoCompiler(pipeline_stage stage, int optLevel) :
+bool uam_nvn_layout = false;
+
+DekoCompiler::DekoCompiler(pipeline_stage stage, int optLevel, bool nvn) :
 	m_stage{stage}, m_glsl{}, m_tgsi{}, m_tgsiNumTokens{}, m_info{}, m_code{}, m_codeSize{},
 	m_nvsh{}, m_dkph{}
 {
@@ -267,6 +269,19 @@ DekoCompiler::DekoCompiler(pipeline_stage stage, int optLevel) :
 	m_info.io.sampleInfoBase = 0x830;         // This is a LUT needed to implement gl_SamplePosition, it contains MSAA base sample positions.
 	m_info.io.uboInfoBase    = 0x020;         // Similar to bufInfoBase, but for UBOs. Compute shaders need this because there aren't enough hardware constbufs.
 	m_info.prop.cp.gridInfoBase = 0x000;      // Compute dimension parameters (gl_LocalGroupSizeARB and gl_NumWorkGroups)
+
+	// --nvn: the buffers where NVN's driver keeps them in its bank 0, so the program runs under a game's NVN: each stage's
+	// storage buffers {address, size} from 0x110 + 0x100 * stage (vertex 0x110 to fragment 0x510) and a compute
+	// program's from 0x310, its uniform buffers' table from 0x210, 16 bytes an entry; uniform block binding b is NVN's
+	// slot b, constant buffer 3 + b (nv50_ir_emit_gm107.cpp). Texture and image handles are not moved: NVN keeps them in
+	// bank 2, so such a program reads a texture by its handle.
+	uam_nvn_layout = nvn;
+	if (nvn)
+	{
+		static const uint16_t storage[] = { 0x110, 0x210, 0x310, 0x410, 0x510, 0x310 };
+		m_info.io.bufInfoBase = storage[stage];
+		m_info.io.uboInfoBase = 0x210;
+	}
 
 	// The following fields are unused in our case, but are kept here for reference's sake:
 	//m_info.io.genUserClip  = prog->vp.num_ucps;             // This is used for old-style clip plane handling (gl_ClipVertex).

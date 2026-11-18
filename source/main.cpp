@@ -11,6 +11,8 @@ static int usage(const char* prog)
 		"  -t, --tgsi=<file>  Specifies the file to which output intermediary TGSI code\n"
 		"  -s, --stage=<name> Specifies the pipeline stage of the shader\n"
 		"                     (vert, tess_ctrl, tess_eval, geom, frag, comp)\n"
+		"  -n, --nvn          Lays the buffers out as NVN's driver does, for a program run\n"
+		"                     through a game's NVN rather than deko3d\n"
 		"  -v, --version      Displays version information\n"
 		, prog);
 	return EXIT_FAILURE;
@@ -19,6 +21,7 @@ static int usage(const char* prog)
 int main(int argc, char* argv[])
 {
 	const char *inFile = nullptr, *outFile = nullptr, *rawFile = nullptr, *tgsiFile = nullptr, *stageName = nullptr;
+	bool nvn = false;
 
 	static struct option long_options[] =
 	{
@@ -26,13 +29,14 @@ int main(int argc, char* argv[])
 		{ "raw",     required_argument, NULL, 'r' },
 		{ "tgsi",    required_argument, NULL, 't' },
 		{ "stage",   required_argument, NULL, 's' },
+		{ "nvn",     no_argument,       NULL, 'n' },
 		{ "help",    no_argument,       NULL, '?' },
 		{ "version", no_argument,       NULL, 'v' },
 		{ NULL, 0, NULL, 0 }
 	};
 
 	int opt, optidx = 0;
-	while ((opt = getopt_long(argc, argv, "o:r:t:s:?v", long_options, &optidx)) != -1)
+	while ((opt = getopt_long(argc, argv, "o:r:t:s:n?v", long_options, &optidx)) != -1)
 	{
 		switch (opt)
 		{
@@ -40,6 +44,7 @@ int main(int argc, char* argv[])
 			case 'r': rawFile = optarg; break;
 			case 't': tgsiFile = optarg; break;
 			case 's': stageName = optarg; break;
+			case 'n': nvn = true; break;
 			case '?': usage(argv[0]); return EXIT_SUCCESS;
 			case 'v': printf("%s - Built on %s %s\n", PACKAGE_STRING, __DATE__, __TIME__); return EXIT_SUCCESS;
 			default:  return usage(argv[0]);
@@ -94,7 +99,7 @@ int main(int argc, char* argv[])
 	fclose(fin);
 	glsl_source[fsize] = 0;
 
-	DekoCompiler compiler{stage};
+	DekoCompiler compiler{stage, 3, nvn};
 	bool rc = compiler.CompileGlsl(glsl_source);
 	delete[] glsl_source;
 

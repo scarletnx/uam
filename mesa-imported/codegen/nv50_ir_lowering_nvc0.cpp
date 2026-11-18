@@ -1827,10 +1827,11 @@ NVC0LoweringPass::loadUboInfo64(Value *ptr, uint32_t off)
    // fincs-edit: This entire function was rewritten to account for the removal of the size field
 
    uint8_t b = prog->driver->io.auxCBSlot;
-   off = prog->driver->io.uboInfoBase + off/2;
+   // NVN's table keeps a size after each address, 16 bytes an entry; deko3d's the address alone
+   off = prog->driver->io.uboInfoBase + (uam_nvn_layout ? off : off/2);
 
    if (ptr)
-      ptr = bld.mkOp2v(OP_SHL, TYPE_U32, bld.getScratch(), ptr, bld.mkImm(3));
+      ptr = bld.mkOp2v(OP_SHL, TYPE_U32, bld.getScratch(), ptr, bld.mkImm(uam_nvn_layout ? 4 : 3));
 
    return bld.
       mkLoadv(TYPE_U64, bld.mkSymbol(FILE_MEMORY_CONST, b, TYPE_U64, off), ptr);

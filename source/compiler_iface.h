@@ -34,7 +34,7 @@ class DekoCompiler
 	void GenerateHeaders();
 
 public:
-	DekoCompiler(pipeline_stage stage, int optLevel = 3);
+	DekoCompiler(pipeline_stage stage, int optLevel = 3, bool nvn = false);
 	~DekoCompiler();
 
 	bool CompileGlsl(const char* glsl);
