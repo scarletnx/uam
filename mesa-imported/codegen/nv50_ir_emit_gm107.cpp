@@ -307,6 +307,17 @@ CodeEmitterGM107::emitADDR(int gpr, int off, int len, int shr,
    emitField(off, len, v->reg.data.offset >> shr);
 }
 
+// The hardware constant buffer of codegen's buffer @p raw: deko3d's layout puts the driver's buffer (codegen's 17) at 0,
+// the compiler's constants (0) at 1 and uniform block binding b (codegen's b + 1) at b + 2. NVN's (uam --nvn) puts
+// binding b one further, at 3 + b, its slot b: bank 2 is the driver's texture handles there.
+static unsigned
+uam_cbuf_id(int raw)
+{
+   if (uam_nvn_layout && raw != 0 && raw != 17)
+      return raw + 2;
+   return (raw + 1) % 18;
+}
+
 void
 CodeEmitterGM107::emitCBUF(int buf, int gpr, int off, int len, int shr,
                            const ValueRef &ref)
@@ -316,7 +327,7 @@ CodeEmitterGM107::emitCBUF(int buf, int gpr, int off, int len, int shr,
 
    assert(!(s->reg.data.offset & ((1 << shr) - 1)));
 
-   emitField(buf,  5, (v->reg.fileIndex + 1) % 18); // fincs-edit: Shuffle cbufs around
+   emitField(buf,  5, uam_cbuf_id(v->reg.fileIndex)); // fincs-edit: Shuffle cbufs around
    if (gpr >= 0)
       emitGPR(gpr, ref.getIndirect(0));
    emitField(off, 16, s->reg.data.offset >> shr);

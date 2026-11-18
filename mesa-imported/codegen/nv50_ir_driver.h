@@ -200,6 +200,9 @@ struct nv50_ir_prog_info
    void *driverPriv;
 };
 
+/* uam --nvn: buffers in the layout of NVN's driver banks rather than deko3d's (source/compiler_iface.cpp) */
+extern bool uam_nvn_layout;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
