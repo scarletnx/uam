@@ -20,8 +20,10 @@ def reads(uam, envydis, stage, nvn, tmp):
     raw = pathlib.Path(tmp) / f'{stage}.raw'
     run = subprocess.run([uam] + (['--nvn'] if nvn else []) + ['-s', stage, '-o', str(pathlib.Path(tmp) / 'x.dksh'),
                           '-r', str(raw), str(shader)], capture_output=True, text=True)
-    if run.returncode:
-        raise SystemExit(f'buffers.{stage}: uam failed: {run.stderr.strip()}')
+    # uam answers an option it does not know with its usage and status 0, writing nothing
+    if run.returncode or not raw.exists():
+        said = (run.stderr.strip() or run.stdout.strip()).splitlines()
+        raise SystemExit(f'buffers.{stage}: uam gave status {run.returncode} and no code: {said[0] if said else ""}')
     sass = subprocess.run([envydis, '-m', 'gm107', '-i', '-n'], stdin=raw.open('rb'), capture_output=True,
                           text=True, check=True).stdout
     return {(int(b), int(o, 16)) for b, o in CONSTANT.findall(sass)}
